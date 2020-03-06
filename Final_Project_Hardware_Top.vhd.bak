@@ -1,0 +1,77 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use IEEE.std_logic_unsigned.all;
+
+entity Final_Project_Hardware_Top is
+	port (clock 		: in std_logic;
+			reset 	: in std_logic;
+			SW			: in std_logic_vector(3 downto 0);
+			LED		: out std_logic_vector(7 downto 0));
+end entity;
+
+architecture Final_Project_Hardware_Top_arch of  Final_Project_Hardware_Top is
+----------------COMPONENTS-------------------------------------------------------------------
+component MUX is
+	port (switches		: 	in std_logic_vector(3 downto 0);		--SW(3:2) -- register select; SW(1:0)--byte selection
+			reg0a			:	in std_logic_vector(31 downto 0);	--Register 0(A input)
+			reg1b			:	in std_logic_vector(31 downto 0);	--Register 1(B input)
+			reg3L			:	in std_logic_vector(31 downto 0);	--Register 3(Low Word result)
+			reg4H			:	in std_logic_vector(31 downto 0);	--Register 4(High word(Overflow) 
+			LEDs			:	out std_logic_vector(7 downto 0));	--LED Output
+end component;
+
+component ALU is
+	port (clk		: in std_logic;
+			reset 	: in std_logic;
+			A, B 		: in std_logic_vector(31 downto 0);
+			opcode	: in std_logic_vector(2 downto 0);
+			status	: out std_logic_vector(2 downto 0);	--Result Flags: (Z)ero, (N)egative, (F):result uses both result registers 
+			Lresult	: out std_logic_vector(31 downto 0);
+			Hresult	: out std_logic_vector(31 downto 0));
+end component;
+-----------------END COMPONENTS---------------------------------------------------------------
+
+signal in_A : std_logic_vector(31 downto 0); --3
+signal in_B : std_logic_vector(31 downto 0); --2
+signal opcode_s : std_logic_vector(31 downto 0);
+signal status_s : std_logic_vector(31 downto 0);
+signal Lresult_s : std_logic_vector(31 downto 0);
+signal Hresult_s : std_logic_vector(31 downto 0);
+
+begin
+
+-----------TESTING HARDWARE------------------------------
+--opcode_s <= "00000000000000000000000000000011"; --addition
+--in_A <= "00000000000000000000000001100100"; --100
+--in_B <= "00000000000000000000000001100100"; --100
+--in_A <= "11111111111111111111111111111101"; --(-3)
+--in_B <= "11111111111111111111111111111101"; --(-3)
+
+opcode_s <= "00000000000000000000000000000011"; --Multiplication
+in_A <= "00000000000000000000000000000101"; --5
+in_B <= "00000000000000000000000000000011"; --3
+--in_A <= "11111111111111111111111111111011"; --(-3)
+--in_B <= "00000000000000000000000000000011"; --3
+A1	:	ALU port map(
+		clk		=> clock,
+		reset 	=> reset,
+		A 			=> in_A,
+		B			=> in_B,
+		opcode	=> opcode_s(2 downto 0),
+		status 	=> status_s(2 downto 0),
+		Lresult	=> Lresult_s,
+		Hresult	=> Hresult_s);
+
+A2	:	MUX port map(
+		switches => SW,
+		reg0a		=> in_A,
+		reg1b		=> in_B,
+		reg3L		=> Lresult_s,
+		reg4H		=> Hresult_s,
+		LEDs 		=> LED);
+
+
+
+
+end architecture; 
